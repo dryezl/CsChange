@@ -1,0 +1,6 @@
+exportPattern("^[[:alpha:]]+")
+importFrom("rms", "cph")
+importFrom("survival", "coxph")
+importFrom("boot", "boot")
+importFrom("stats", "formula", "pnorm", "qnorm", "sd")
+importFrom("Hmisc", "rcorrcens")
