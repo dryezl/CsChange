@@ -30,7 +30,9 @@ Please feel free to contact us, if you have any advice and find any bug!
 
 Update description:
 
-more functions will be included in 'reportROC' package!
+Version 0.1.1: Fix the error of "variables not found" for the 'coxph' model.
+
+more functions will be included in 'CsChange' package!
 }
 \examples{
 require("rms")

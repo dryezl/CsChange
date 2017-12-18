@@ -7,13 +7,21 @@ CsChange=function(fit1,fit2,data,nb=100,signif=0.05){
   }
 
   if(as.character(fit1$call)[1]=="coxph" & as.character(fit2$call)[1]=="coxph"){
+    surv=sapply(strsplit(as.character(fit1$call)[2],split="~"),"[",1)
+    surv=gsub("Surv","",surv)
+    surv=gsub("\\(","",surv)
+    surv=gsub("\\)","",surv)
+    surv=gsub(" ","",surv)
+    surv.t=sapply(strsplit(surv,split=","),"[",1)
+    surv.s=sapply(strsplit(surv,split=","),"[",2)
     change.boot=function(data,indices){
       data.boot=data[indices,]
       fit1.boot=coxph(formula(as.character(fit1$call)[2]),data=data.boot)
       fit2.boot=coxph(formula(as.character(fit2$call)[2]),data=data.boot)
-      surv=sapply(strsplit(as.character(fit1$call)[2],split="~"),"[",1)
-      w1=rcorrcens(formula(paste(surv,"~","predict(fit1.boot)")))
-      w2=rcorrcens(formula(paste(surv,"~","predict(fit2.boot)")))
+      w1=rcorrcens(formula(paste("Surv(data.boot$",surv.t,",","data.boot$",surv.s,") ~",
+                                 "predict(fit1.boot)")))
+      w2=rcorrcens(formula(paste("Surv(data.boot$",surv.t,",","data.boot$",surv.s,") ~",
+                                 "predict(fit2.boot)")))
       c1=w1[3]/2+0.5
       c2=w2[3]/2+0.5
       as.numeric(c2-c1)
