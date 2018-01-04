@@ -6,14 +6,32 @@ CsChange=function(fit1,fit2,data,nb=100,signif=0.05){
               "package are supported currently!"))
   }
 
+  surv=sapply(strsplit(as.character(fit1$call)[2],split="~"),"[",1)
+  surv=gsub("Surv","",surv)
+  surv=gsub("\\(","",surv)
+  surv=gsub("\\)","",surv)
+  surv=gsub(" ","",surv)
+  surv.t=sapply(strsplit(surv,split=","),"[",1)
+  surv.s=sapply(strsplit(surv,split=","),"[",2)
+
+  x.fit1=sapply(strsplit(as.character(fit1$call)[2],split="~"),"[",2)
+  x.fit1=gsub(" ","",x.fit1)
+  x.fit2=sapply(strsplit(as.character(fit2$call)[2],split="~"),"[",2)
+  x.fit2=gsub(" ","",x.fit2)
+  x.fit2=strsplit(x.fit2,"\\+")[[1]]
+  x.fit=c(x.fit1,x.fit2)
+  x.fit=x.fit[!duplicated(x.fit)]
+
+  all=c(surv.t,surv.s,x.fit)
+
+  data=data[,all]
+  nrows1=nrow(data)
+  data=na.omit(data)
+  nrows2=nrow(data)
+
+  if(nrows1!=nrows2){message("Note: some cases with missing value were removed.")}
+
   if(as.character(fit1$call)[1]=="coxph" & as.character(fit2$call)[1]=="coxph"){
-    surv=sapply(strsplit(as.character(fit1$call)[2],split="~"),"[",1)
-    surv=gsub("Surv","",surv)
-    surv=gsub("\\(","",surv)
-    surv=gsub("\\)","",surv)
-    surv=gsub(" ","",surv)
-    surv.t=sapply(strsplit(surv,split=","),"[",1)
-    surv.s=sapply(strsplit(surv,split=","),"[",2)
     change.boot=function(data,indices){
       data.boot=data[indices,]
       fit1.boot=coxph(formula(as.character(fit1$call)[2]),data=data.boot)

@@ -51,12 +51,12 @@ dd=datadist(age, sex)
 options(datadist='dd')
 
 #for 'cph' model
-fit1=cph(Surv(dt,e)~age)
-fit2=cph(Surv(dt,e)~age+sex)
+fit1=cph(Surv(dt,e)~age,data)
+fit2=cph(Surv(dt,e)~age+sex,data)
 CsChange(fit1,fit2,data,nb=20)
 
 #for 'coxph' model
-fit1=coxph(Surv(dt,e)~age)
-fit2=coxph(Surv(dt,e)~age+sex)
+fit1=coxph(Surv(dt,e)~age,data)
+fit2=coxph(Surv(dt,e)~age+sex,data)
 CsChange(fit1,fit2,data,nb=20)
 }
