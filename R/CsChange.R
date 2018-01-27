@@ -16,9 +16,18 @@ CsChange=function(fit1,fit2,data,nb=100,signif=0.05){
 
   x.fit1=sapply(strsplit(as.character(fit1$call)[2],split="~"),"[",2)
   x.fit1=gsub(" ","",x.fit1)
+  x.fit1=strsplit(x.fit1,"\\+")[[1]]
+  if(length(grep("\\(",x.fit1))>=1){
+    x.fit1[grep("\\(",x.fit1)]=sapply(strsplit(x.fit1[grep("\\(",x.fit1)],"\\("),"[",2)
+    x.fit1[grep("\\)",x.fit1)]=gsub("\\)","",x.fit1[grep("\\)",x.fit1)])
+  }
   x.fit2=sapply(strsplit(as.character(fit2$call)[2],split="~"),"[",2)
   x.fit2=gsub(" ","",x.fit2)
   x.fit2=strsplit(x.fit2,"\\+")[[1]]
+  if(length(grep("\\(",x.fit2))>=1){
+    x.fit2[grep("\\(",x.fit2)]=sapply(strsplit(x.fit2[grep("\\(",x.fit2)],"\\("),"[",2)
+    x.fit2[grep("\\)",x.fit2)]=gsub("\\)","",x.fit2[grep("\\)",x.fit2)])
+  }
   x.fit=c(x.fit1,x.fit2)
   x.fit=x.fit[!duplicated(x.fit)]
 
@@ -30,6 +39,20 @@ CsChange=function(fit1,fit2,data,nb=100,signif=0.05){
   nrows2=nrow(data)
 
   if(nrows1!=nrows2){message("Note: some cases with missing value were removed.")}
+
+  fit1.c=coxph(formula(as.character(fit1$call)[2]),data=data)
+  fit2.c=coxph(formula(as.character(fit2$call)[2]),data=data)
+
+  w1=rcorrcens(formula(paste("Surv(data$",surv.t,",","data$",surv.s,") ~",
+                             "predict(fit1.c)")))
+  w2=rcorrcens(formula(paste("Surv(data$",surv.t,",","data$",surv.s,") ~",
+                             "predict(fit2.c)")))
+  c1=w1[3]/2+0.5
+  se1=w1[4]/2;low1=c1-1.96*se1;up1=c1+1.96*se1
+  c2=w2[3]/2+0.5
+  se2=w2[4]/2;low2=c2-1.96*se2;up2=c2+1.96*se2
+  c12=data.frame(c=c(c1,c2),low=c(low1,low2),up=c(up1,up2))
+  row.names(c12)=c("fit1","fit2")
 
   if(as.character(fit1$call)[1]=="coxph" & as.character(fit2$call)[1]=="coxph"){
     change.boot=function(data,indices){
@@ -64,8 +87,9 @@ CsChange=function(fit1,fit2,data,nb=100,signif=0.05){
   z=rst$change/((rst$up-rst$low)/(2*qnorm(1-signif*0.5)))
   p=2*pnorm(abs(z),lower.tail=F)
   rst$p=p
+  row.names(rst)="fit2-fit1"
 
-  return(rst)
+  return(list(rst,c12))
 }
 
 

@@ -15,9 +15,11 @@ Calculate the confidence interval and p value for change in C-statistic. The adj
   \item{signif}{the significant level of confidence interval, with a default of 0.05 and a two-sided test}
 }
 \value{
-  \item{change}{change of C-statistic from fit1 to fit2}
-  \item{low,up}{the 95 percent confidence interval of change}
-  \item{p}{the p value of testing for change}
+  \item{change}{in list 1, the change of C-statistic from fit1 to fit2}
+  \item{low,up}{in list 1, the confidence interval of change}
+  \item{p}{in list 1, the p value of testing for change}
+  \item{c}{in list 2, the C-statistic of fit1 and fit2}
+  \item{low,up}{in list 2, the confidence interval of change}
 }
 \author{
 Zhicheng Du<dgdzc@hotmail.com>, Yuantao Hao<haoyt@mail.sysu.edu.cn>
@@ -31,6 +33,10 @@ Please feel free to contact us, if you have any advice and find any bug!
 Update description:
 
 Version 0.1.1: Fix the error of "variables not found" for the 'coxph' model.
+
+Version 0.1.2: Fix the error of data with missing value.
+
+Version 0.1.3: a) Add the c statistic of fit1 and fit2 to the output. b) Fix the error of model with multiple variables. c) Fix the error of independent variable with functions, i.e., rcc(), ploy().
 
 more functions will be included in 'CsChange' package!
 }
@@ -59,4 +65,9 @@ CsChange(fit1,fit2,data,nb=20)
 fit1=coxph(Surv(dt,e)~age,data)
 fit2=coxph(Surv(dt,e)~age+sex,data)
 CsChange(fit1,fit2,data,nb=20)
+
+#for 'coxph' model
+fit1=coxph(Surv(dt,e)~age+sex,data)
+fit2=coxph(Surv(dt,e)~rcs(age)+sex,data)
+CsChange(fit1,fit2,data,nb=20)#ignore the warnings messages
 }
