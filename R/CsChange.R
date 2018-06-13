@@ -1,95 +1,202 @@
-CsChange=function(fit1,fit2,data,nb=100,signif=0.05){
+CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=100,signif=0.05){
 
-  if.stop=c(as.character(fit1$call)[1],as.character(fit2$call)[1]) %in% c("coxph","cph")
+  if.stop=c(as.character(fit1$call)[1],as.character(fit2$call)[1]) %in% c("lrm","coxph","cph")
   if(any(!if.stop)){
-    stop(paste("Only 'coxph' model in 'survival' package and 'cph' model in 'rms'",
-              "package are supported currently!"))
+    stop(cat(paste("The models supported currently are:",
+                   "'coxph' model in 'survival' package",
+                   "'cph' model in 'rms' package",
+                   "'lrm' model in 'rms' package",sep="\n")))
   }
 
-  surv=sapply(strsplit(as.character(fit1$call)[2],split="~"),"[",1)
-  surv=gsub("Surv","",surv)
-  surv=gsub("\\(","",surv)
-  surv=gsub("\\)","",surv)
-  surv=gsub(" ","",surv)
-  surv.t=sapply(strsplit(surv,split=","),"[",1)
-  surv.s=sapply(strsplit(surv,split=","),"[",2)
+  if(as.character(fit1$call)[1]=="coxph" | as.character(fit1$call)[1]=="cph"){
 
-  x.fit1=sapply(strsplit(as.character(fit1$call)[2],split="~"),"[",2)
-  x.fit1=gsub(" ","",x.fit1)
-  x.fit1=strsplit(x.fit1,"\\+")[[1]]
-  if(length(grep("\\(",x.fit1))>=1){
-    x.fit1[grep("\\(",x.fit1)]=sapply(strsplit(x.fit1[grep("\\(",x.fit1)],"\\("),"[",2)
-    x.fit1[grep("\\)",x.fit1)]=gsub("\\)","",x.fit1[grep("\\)",x.fit1)])
-  }
-  x.fit2=sapply(strsplit(as.character(fit2$call)[2],split="~"),"[",2)
-  x.fit2=gsub(" ","",x.fit2)
-  x.fit2=strsplit(x.fit2,"\\+")[[1]]
-  if(length(grep("\\(",x.fit2))>=1){
-    x.fit2[grep("\\(",x.fit2)]=sapply(strsplit(x.fit2[grep("\\(",x.fit2)],"\\("),"[",2)
-    x.fit2[grep("\\)",x.fit2)]=gsub("\\)","",x.fit2[grep("\\)",x.fit2)])
-  }
-  x.fit=c(x.fit1,x.fit2)
-  x.fit=x.fit[!duplicated(x.fit)]
+    surv=sapply(strsplit(as.character(fit1$call)[2],split="~"),"[",1)
+    surv=gsub("Surv\\(","",surv)
+    surv=gsub("\\)","",surv)
+    surv=gsub(" ","",surv)
+    surv.t=sapply(strsplit(surv,split=","),"[",1)
+    surv.s=sapply(strsplit(surv,split=","),"[",2)
+    if(length(grep("\\=",surv.t))==1){surv.t=sapply(strsplit(surv.t,split="="),"[",2)}
+    if(length(grep("\\=",surv.s))==1){surv.s=sapply(strsplit(surv.s,split="="),"[",2)}
+    surv.t1=surv.t
+    surv.s1=surv.s
 
-  all=c(surv.t,surv.s,x.fit)
+    surv=sapply(strsplit(as.character(fit2$call)[2],split="~"),"[",1)
+    surv=gsub("Surv\\(","",surv)
+    surv=gsub("\\)","",surv)
+    surv=gsub(" ","",surv)
+    surv.t=sapply(strsplit(surv,split=","),"[",1)
+    surv.s=sapply(strsplit(surv,split=","),"[",2)
+    if(length(grep("\\=",surv.t))==1){surv.t=sapply(strsplit(surv.t,split="="),"[",2)}
+    if(length(grep("\\=",surv.s))==1){surv.s=sapply(strsplit(surv.s,split="="),"[",2)}
+    surv.t2=surv.t
+    surv.s2=surv.s
 
-  data=data[,all]
-  nrows1=nrow(data)
-  data=na.omit(data)
-  nrows2=nrow(data)
+    surv.t=c(surv.t1,surv.t2)
+    surv.s=c(surv.s1,surv.s2)
 
-  if(nrows1!=nrows2){message("Note: some cases with missing value were removed.")}
+    x.fit1=sapply(strsplit(as.character(fit1$call)[2],split="~"),"[",2)
+    x.fit1=gsub(" ","",x.fit1)
+    x.fit1=strsplit(x.fit1,"\\+")[[1]]
+    if(length(grep("\\(",x.fit1))>=1){
+      x.fit1[grep("\\(",x.fit1)]=sapply(strsplit(x.fit1[grep("\\(",x.fit1)],"\\("),"[",2)
+      x.fit1[grep("\\)",x.fit1)]=gsub("\\)","",x.fit1[grep("\\)",x.fit1)])
+    }
+    x.fit2=sapply(strsplit(as.character(fit2$call)[2],split="~"),"[",2)
+    x.fit2=gsub(" ","",x.fit2)
+    x.fit2=strsplit(x.fit2,"\\+")[[1]]
+    if(length(grep("\\(",x.fit2))>=1){
+      x.fit2[grep("\\(",x.fit2)]=sapply(strsplit(x.fit2[grep("\\(",x.fit2)],"\\("),"[",2)
+      x.fit2[grep("\\)",x.fit2)]=gsub("\\)","",x.fit2[grep("\\)",x.fit2)])
+    }
+    x.fit=c(x.fit1,x.fit2)
+    x.fit=x.fit[!duplicated(x.fit)]
 
-  fit1.c=coxph(formula(as.character(fit1$call)[2]),data=data)
-  fit2.c=coxph(formula(as.character(fit2$call)[2]),data=data)
+    all=c(surv.t,surv.s,x.fit)
 
-  w1=rcorrcens(formula(paste("Surv(data$",surv.t,",","data$",surv.s,") ~",
-                             "predict(fit1.c)")))
-  w2=rcorrcens(formula(paste("Surv(data$",surv.t,",","data$",surv.s,") ~",
-                             "predict(fit2.c)")))
-  c1=w1[3]/2+0.5
-  se1=w1[4]/2;low1=c1-1.96*se1;up1=c1+1.96*se1
-  c2=w2[3]/2+0.5
-  se2=w2[4]/2;low2=c2-1.96*se2;up2=c2+1.96*se2
-  c12=data.frame(c=c(c1,c2),low=c(low1,low2),up=c(up1,up2))
-  row.names(c12)=c("fit1","fit2")
+    data=data[,all]
+    nrows1=nrow(data)
+    data=na.omit(data)
+    nrows2=nrow(data)
 
-  if(as.character(fit1$call)[1]=="coxph" & as.character(fit2$call)[1]=="coxph"){
+    if(nrows1!=nrows2){message("Note: some cases with missing value were removed.")}
+
+    fit1.c=coxph(formula(as.character(fit1$call)[2]),data=data)
+    fit2.c=coxph(formula(as.character(fit2$call)[2]),data=data)
+
+    w1=rcorrcens(formula(paste("Surv(data$",surv.t,",","data$",surv.s,") ~",
+                               "predict(fit1.c)")))
+    w2=rcorrcens(formula(paste("Surv(data$",surv.t,",","data$",surv.s,") ~",
+                               "predict(fit2.c)")))
+    c1=w1[3]/2+0.5
+    se1=w1[4]/2;low1=c1-1.96*se1;up1=c1+1.96*se1
+    c2=w2[3]/2+0.5
+    se2=w2[4]/2;low2=c2-1.96*se2;up2=c2+1.96*se2
+    c12=data.frame(c=c(c1,c2),low=c(low1,low2),up=c(up1,up2))
+    row.names(c12)=c("fit1","fit2")
+
+    if(as.character(fit1$call)[1]=="coxph" & as.character(fit2$call)[1]=="coxph"){
+      change.boot=function(data,indices){
+        data.boot=data[indices,]
+        fit1.boot=coxph(formula(as.character(fit1$call)[2]),data=data.boot)
+        fit2.boot=coxph(formula(as.character(fit2$call)[2]),data=data.boot)
+        w1=rcorrcens(formula(paste("Surv(data.boot$",surv.t,",","data.boot$",surv.s,") ~",
+                                   "predict(fit1.boot)")))
+        w2=rcorrcens(formula(paste("Surv(data.boot$",surv.t,",","data.boot$",surv.s,") ~",
+                                   "predict(fit2.boot)")))
+        c1=w1[3]/2+0.5
+        c2=w2[3]/2+0.5
+        as.numeric(c2-c1)
+      }
+    }
+
+    if(as.character(fit1$call)[1]=="cph" & as.character(fit2$call)[1]=="cph"){
+      change.boot=function(data,indices){
+        data.boot=data[indices,]
+        fit1.boot=cph(formula(as.character(fit1$call)[2]),data=data.boot)
+        fit2.boot=cph(formula(as.character(fit2$call)[2]),data=data.boot)
+        c1=fit1.boot$stats["Dxy"]/2+0.5
+        c2=fit2.boot$stats["Dxy"]/2+0.5
+        as.numeric(c2-c1)
+      }
+    }
+
+    rstb <- boot(data, change.boot, R=nb)
+    low=rstb$t0-qnorm(1-signif*0.5)*sd(rstb$t)
+    up=rstb$t0+qnorm(1-signif*0.5)*sd(rstb$t)
+    rst=data.frame(change=rstb$t0,low=low,up=up)
+    z=rst$change/((rst$up-rst$low)/(2*qnorm(1-signif*0.5)))
+    p=2*pnorm(abs(z),lower.tail=F)
+    rst$p=p
+    row.names(rst)="fit2-fit1"
+
+    return(list(rst,c12))
+
+  }#coxph or cph
+
+  if(as.character(fit1$call)[1]=="lrm"){
+
+    if(is.null(form1)){
+      form1=as.character(fit1$call)[2]
+      form2=as.character(fit2$call)[2]
+    }
+
+    if(!is.null(form1)){
+      y1=as.character(form1)[2]
+      y2=as.character(form2)[2]
+      y=c(y1,y2)
+
+      x.fit1=as.character(form1)[3]
+      x.fit1=strsplit(x.fit1,"\\+")[[1]]
+      x.fit1=gsub(" ","",x.fit1)
+      if(length(grep("\\(",x.fit1))>=1){
+        x.fit1[grep("\\(",x.fit1)]=sapply(strsplit(x.fit1[grep("\\(",x.fit1)],"\\("),"[",2)
+        x.fit1[grep("\\)",x.fit1)]=gsub("\\)","",x.fit1[grep("\\)",x.fit1)])
+      }
+
+      x.fit2=as.character(form2)[3]
+      x.fit2=strsplit(x.fit2,"\\+")[[1]]
+      x.fit2=gsub(" ","",x.fit2)
+      if(length(grep("\\(",x.fit2))>=1){
+        x.fit2[grep("\\(",x.fit2)]=sapply(strsplit(x.fit2[grep("\\(",x.fit2)],"\\("),"[",2)
+        x.fit2[grep("\\)",x.fit2)]=gsub("\\)","",x.fit2[grep("\\)",x.fit2)])
+      }
+
+      x.fit=c(x.fit1,x.fit2)
+      x.fit=x.fit[!duplicated(x.fit)]
+      all=c(y,x.fit)
+    }
+
+    data=data[,all]
+    nrows1=nrow(data)
+    data=na.omit(data)
+    nrows2=nrow(data)
+
+    if(nrows1!=nrows2){message("Note: some cases with missing value were removed.")}
+
+    fit1.c=lrm(form1,data=data)
+    fit2.c=lrm(form2,data=data)
+
+    w1=rcorrcens(formula(paste("data$",y,"~","predict(fit1.c)",sep="")))
+    w2=rcorrcens(formula(paste("data$",y,"~","predict(fit2.c)",sep="")))
+    c1=w1[3]/2+0.5
+    se1=w1[4]/2;low1=c1-1.96*se1;up1=c1+1.96*se1
+    c2=w2[3]/2+0.5
+    se2=w2[4]/2;low2=c2-1.96*se2;up2=c2+1.96*se2
+    c12=data.frame(c=c(c1,c2),low=c(low1,low2),up=c(up1,up2))
+    row.names(c12)=c("fit1","fit2")
+
     change.boot=function(data,indices){
       data.boot=data[indices,]
-      fit1.boot=coxph(formula(as.character(fit1$call)[2]),data=data.boot)
-      fit2.boot=coxph(formula(as.character(fit2$call)[2]),data=data.boot)
-      w1=rcorrcens(formula(paste("Surv(data.boot$",surv.t,",","data.boot$",surv.s,") ~",
-                                 "predict(fit1.boot)")))
-      w2=rcorrcens(formula(paste("Surv(data.boot$",surv.t,",","data.boot$",surv.s,") ~",
-                                 "predict(fit2.boot)")))
+      fit1.boot=lrm(form1,data=data.boot)
+      fit2.boot=lrm(form2,data=data.boot)
+      w1=rcorrcens(formula(paste("data$",y,"~","predict(fit1.c)",sep="")))
+      w2=rcorrcens(formula(paste("data$",y,"~","predict(fit2.c)",sep="")))
       c1=w1[3]/2+0.5
       c2=w2[3]/2+0.5
       as.numeric(c2-c1)
     }
-  }
 
-  if(as.character(fit1$call)[1]=="cph" & as.character(fit2$call)[1]=="cph"){
-    change.boot=function(data,indices){
-      data.boot=data[indices,]
-      fit1.boot=cph(formula(as.character(fit1$call)[2]),data=data.boot)
-      fit2.boot=cph(formula(as.character(fit2$call)[2]),data=data.boot)
-      c1=fit1.boot$stats["Dxy"]/2+0.5
-      c2=fit2.boot$stats["Dxy"]/2+0.5
-      as.numeric(c2-c1)
+    tryb=try(boot(data, change.boot, R=nb),TRUE)
+    if(inherits(tryb,"try-error")){
+      message("There is problem in the 'boot' function!")
+      rst=NULL
+    }else{
+      rstb <- boot(data, change.boot, R=nb)
+      if(rstb$t0==0){message("These two models are equal!");rst=NULL}
+      if(rstb$t0!=0){
+        low=rstb$t0-qnorm(1-signif*0.5)*sd(rstb$t)
+        up=rstb$t0+qnorm(1-signif*0.5)*sd(rstb$t)
+        rst=data.frame(change=rstb$t0,low=low,up=up)
+        z=rst$change/((rst$up-rst$low)/(2*qnorm(1-signif*0.5)))
+        p=2*pnorm(abs(z),lower.tail=F)
+        rst$p=p
+        row.names(rst)="fit2-fit1"
+      }
     }
-  }
 
-  rstb <- boot(data, change.boot, R=nb)
-  low=rstb$t0-qnorm(1-signif*0.5)*sd(rstb$t)
-  up=rstb$t0+qnorm(1-signif*0.5)*sd(rstb$t)
-  rst=data.frame(change=rstb$t0,low=low,up=up)
-  z=rst$change/((rst$up-rst$low)/(2*qnorm(1-signif*0.5)))
-  p=2*pnorm(abs(z),lower.tail=F)
-  rst$p=p
-  row.names(rst)="fit2-fit1"
+    return(list(rst,c12))
 
-  return(list(rst,c12))
+  }#lrm
+
 }
-
-

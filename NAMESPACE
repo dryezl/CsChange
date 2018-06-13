@@ -1,5 +1,5 @@
 exportPattern("^[[:alpha:]]+")
-importFrom("rms", "cph")
+importFrom("rms", "cph","lrm")
 importFrom("survival", "coxph")
 importFrom("boot", "boot")
 importFrom("stats", "formula", "pnorm", "qnorm", "sd", "na.omit")

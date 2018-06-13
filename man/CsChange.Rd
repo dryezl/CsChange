@@ -2,14 +2,16 @@
 \alias{CsChange}
 \title{Testing for Change in C-Statistic}
 \usage{
-CsChange(fit1,fit2,data,nb,signif)
+CsChange(fit1,fit2,form1,form2,data,nb,signif)
 }
 \description{
 Calculate the confidence interval and p value for change in C-statistic. The adjusted C-statistic is calculated by using formula as "Somers' Dxy rank correlation"/2+0.5. The confidence interval was calculated by using the bootstrap method. The p value was calculated by using the Z testing method. Please refer to the article of Peter Ganz et al. (2016) <doi:10.1001/jama.2016.5951>.
 }
 \arguments{
-  \item{fit1}{an object from 'cph' or 'coxph' model}
-  \item{fit2}{another object from 'cph' or 'coxph' model}
+  \item{fit1}{an object from 'cph', 'coxph' or 'lrm' model}
+  \item{fit2}{another object from 'cph', 'coxph' or 'lrm' model}
+  \item{form1}{unnecessary, the formula used in fit1, i.e., 'y~x1'}
+  \item{form2}{unnecessary, the formula used in fit2, i.e., 'y~x1+x2'}
   \item{data}{a data frame used in the fit1 or fit2}
   \item{nb}{the number of bootstrap replicate, with a default of 100}
   \item{signif}{the significant level of confidence interval, with a default of 0.05 and a two-sided test}
@@ -38,6 +40,8 @@ Version 0.1.2: Fix the error of data with missing value.
 
 Version 0.1.3: a) Add the c statistic of fit1 and fit2 to the output. b) Fix the error of model with multiple variables. c) Fix the error of independent variable with functions, i.e., rcc(), ploy().
 
+Version 0.1.4: a) Fix the error with the arguments of 'time=' and 'event=' in the coxph model. b) 'lrm' model was supported. c) Different dependent variables could be set.
+
 more functions will be included in 'CsChange' package!
 }
 \examples{
@@ -52,22 +56,27 @@ dt=-log(runif(n))/h
 e=ifelse(dt <= cens,1,0)
 dt=pmin(dt, cens)
 units(dt)="Year"
-data=data.frame(dt,e,age,sex)
+data=data.frame(dt=dt,e=e,dt1=dt,dt2=dt,e1=e,e2=e,age,sex)
 dd=datadist(age, sex)
 options(datadist='dd')
 
 #for 'cph' model
 fit1=cph(Surv(dt,e)~age,data)
 fit2=cph(Surv(dt,e)~age+sex,data)
-CsChange(fit1,fit2,data,nb=20)
+CsChange(fit1,fit2,data=data,nb=20)
 
 #for 'coxph' model
 fit1=coxph(Surv(dt,e)~age,data)
 fit2=coxph(Surv(dt,e)~age+sex,data)
-CsChange(fit1,fit2,data,nb=20)
+CsChange(fit1,fit2,data=data,nb=20)
 
 #for 'coxph' model
-fit1=coxph(Surv(dt,e)~age+sex,data)
-fit2=coxph(Surv(dt,e)~rcs(age)+sex,data)
-CsChange(fit1,fit2,data,nb=20)#ignore the warnings messages
+#fit1=coxph(Surv(dt1,e1)~age,data)
+#fit2=coxph(Surv(dt2,e2)~age+sex,data)
+#CsChange(fit1,fit2,data=data,nb=20)
+
+#for 'coxph' model
+#fit1=coxph(Surv(dt,e)~age+sex,data)
+#fit2=coxph(Surv(dt,e)~rcs(age)+sex,data)
+#CsChange(fit1,fit2,data=data,nb=20)#ignore the warnings messages
 }
