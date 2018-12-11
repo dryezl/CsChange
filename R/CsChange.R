@@ -1,4 +1,6 @@
-CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=100,signif=0.05){
+CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=200,signif=0.05,seed=123){
+
+  set.seed(seed)
 
   if.stop=c(as.character(fit1$call)[1],as.character(fit2$call)[1]) %in% c("lrm","coxph","cph")
   if(any(!if.stop)){
@@ -7,6 +9,10 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=100,signif=0.05){
                    "'cph' model in 'rms' package",
                    "'lrm' model in 'rms' package",sep="\n")))
   }
+
+  #############################
+  ## for coxph and cph model ##
+  #############################
 
   if(as.character(fit1$call)[1]=="coxph" | as.character(fit1$call)[1]=="cph"){
 
@@ -73,6 +79,9 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=100,signif=0.05){
     c2=w2[3]/2+0.5
     se2=w2[4]/2;low2=c2-1.96*se2;up2=c2+1.96*se2
     c12=data.frame(c=c(c1,c2),low=c(low1,low2),up=c(up1,up2))
+    z=(c12$c-0.5)/((c12$up-c12$low)/(2*qnorm(1-signif*0.5)))
+    p=2*pnorm(abs(z),lower.tail=F)
+    c12$p=p
     row.names(c12)=c("fit1","fit2")
 
     if(as.character(fit1$call)[1]=="coxph" & as.character(fit2$call)[1]=="coxph"){
@@ -101,9 +110,10 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=100,signif=0.05){
       }
     }
 
-    rstb <- boot(data, change.boot, R=nb)
-    low=rstb$t0-qnorm(1-signif*0.5)*sd(rstb$t)
-    up=rstb$t0+qnorm(1-signif*0.5)*sd(rstb$t)
+    rstb=boot(data, change.boot, R=nb)
+    ci=boot.ci(rstb,type="norm")
+    low=ci$normal[2]
+    up=ci$normal[3]
     rst=data.frame(change=rstb$t0,low=low,up=up)
     z=rst$change/((rst$up-rst$low)/(2*qnorm(1-signif*0.5)))
     p=2*pnorm(abs(z),lower.tail=F)
@@ -113,6 +123,10 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=100,signif=0.05){
     return(list(rst,c12))
 
   }#coxph or cph
+
+  ###################
+  ## for lrm model ##
+  ###################
 
   if(as.character(fit1$call)[1]=="lrm"){
 
@@ -164,6 +178,9 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=100,signif=0.05){
     c2=w2[3]/2+0.5
     se2=w2[4]/2;low2=c2-1.96*se2;up2=c2+1.96*se2
     c12=data.frame(c=c(c1,c2),low=c(low1,low2),up=c(up1,up2))
+    z=(c12$c-0.5)/((c12$up-c12$low)/(2*qnorm(1-signif*0.5)))
+    p=2*pnorm(abs(z),lower.tail=F)
+    c12$p=p
     row.names(c12)=c("fit1","fit2")
 
     change.boot=function(data,indices){
@@ -182,11 +199,12 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=100,signif=0.05){
       message("There is problem in the 'boot' function!")
       rst=NULL
     }else{
-      rstb <- boot(data, change.boot, R=nb)
+      rstb=boot(data, change.boot, R=nb)
       if(rstb$t0==0){message("These two models are equal!");rst=NULL}
       if(rstb$t0!=0){
-        low=rstb$t0-qnorm(1-signif*0.5)*sd(rstb$t)
-        up=rstb$t0+qnorm(1-signif*0.5)*sd(rstb$t)
+        ci=boot.ci(rstb,type="norm")
+        low=ci$normal[2]
+        up=ci$normal[3]
         rst=data.frame(change=rstb$t0,low=low,up=up)
         z=rst$change/((rst$up-rst$low)/(2*qnorm(1-signif*0.5)))
         p=2*pnorm(abs(z),lower.tail=F)

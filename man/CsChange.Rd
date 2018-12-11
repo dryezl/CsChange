@@ -2,7 +2,7 @@
 \alias{CsChange}
 \title{Testing for Change in C-Statistic}
 \usage{
-CsChange(fit1,fit2,form1,form2,data,nb,signif)
+CsChange(fit1,fit2,form1,form2,data,nb,signif,seed)
 }
 \description{
 Calculate the confidence interval and p value for change in C-statistic. The adjusted C-statistic is calculated by using formula as "Somers' Dxy rank correlation"/2+0.5. The confidence interval was calculated by using the bootstrap method. The p value was calculated by using the Z testing method. Please refer to the article of Peter Ganz et al. (2016) <doi:10.1001/jama.2016.5951>.
@@ -13,8 +13,9 @@ Calculate the confidence interval and p value for change in C-statistic. The adj
   \item{form1}{unnecessary, the formula used in fit1, i.e., 'y~x1'}
   \item{form2}{unnecessary, the formula used in fit2, i.e., 'y~x1+x2'}
   \item{data}{a data frame used in the fit1 or fit2}
-  \item{nb}{the number of bootstrap replicate, with a default of 100}
+  \item{nb}{the number of bootstrap replicate, with a default of 200}
   \item{signif}{the significant level of confidence interval, with a default of 0.05 and a two-sided test}
+  \item{seed}{an integer used to set for random seed, with a default of 123}
 }
 \value{
   \item{change}{in list 1, the change of C-statistic from fit1 to fit2}
@@ -41,6 +42,8 @@ Version 0.1.2: Fix the error of data with missing value.
 Version 0.1.3: a) Add the c statistic of fit1 and fit2 to the output. b) Fix the error of model with multiple variables. c) Fix the error of independent variable with functions, i.e., rcc(), ploy().
 
 Version 0.1.4: a) Fix the error with the arguments of 'time=' and 'event=' in the coxph model. b) 'lrm' model was supported. c) Different dependent variables could be set.
+
+Version 0.1.5: a) Apply 'boot.ci' function to compute the confidence interFix the error with the arguments of 'time=' and 'event=' in the coxph model. b) 'lrm' model was supported. c) Different dependent variables could be set.
 
 more functions will be included in 'CsChange' package!
 }
