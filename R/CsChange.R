@@ -16,7 +16,12 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=200,signif=0.05,seed=1
 
   if(as.character(fit1$call)[1]=="coxph" | as.character(fit1$call)[1]=="cph"){
 
-    surv=sapply(strsplit(as.character(fit1$call)[2],split="~"),"[",1)
+    if(is.null(fit1$formula)){fit1.formula=fit1$sformula}
+    if(is.null(fit1$sformula)){fit1.formula=fit1$formula}
+    if(is.null(fit2$formula)){fit2.formula=fit2$sformula}
+    if(is.null(fit2$sformula)){fit2.formula=fit2$formula}
+
+    surv=as.character(fit1.formula)[2]
     surv=gsub("Surv\\(","",surv)
     surv=gsub("\\)","",surv)
     surv=gsub(" ","",surv)
@@ -27,7 +32,7 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=200,signif=0.05,seed=1
     surv.t1=surv.t
     surv.s1=surv.s
 
-    surv=sapply(strsplit(as.character(fit2$call)[2],split="~"),"[",1)
+    surv=as.character(fit2.formula)[2]
     surv=gsub("Surv\\(","",surv)
     surv=gsub("\\)","",surv)
     surv=gsub(" ","",surv)
@@ -40,15 +45,17 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=200,signif=0.05,seed=1
 
     surv.t=c(surv.t1,surv.t2)
     surv.s=c(surv.s1,surv.s2)
+    surv.t=surv.t[!duplicated(surv.t)]
+    surv.s=surv.s[!duplicated(surv.s)]
 
-    x.fit1=sapply(strsplit(as.character(fit1$call)[2],split="~"),"[",2)
+    x.fit1=as.character(fit1.formula)[3]
     x.fit1=gsub(" ","",x.fit1)
     x.fit1=strsplit(x.fit1,"\\+")[[1]]
     if(length(grep("\\(",x.fit1))>=1){
       x.fit1[grep("\\(",x.fit1)]=sapply(strsplit(x.fit1[grep("\\(",x.fit1)],"\\("),"[",2)
       x.fit1[grep("\\)",x.fit1)]=gsub("\\)","",x.fit1[grep("\\)",x.fit1)])
     }
-    x.fit2=sapply(strsplit(as.character(fit2$call)[2],split="~"),"[",2)
+    x.fit2=as.character(fit2.formula)[3]
     x.fit2=gsub(" ","",x.fit2)
     x.fit2=strsplit(x.fit2,"\\+")[[1]]
     if(length(grep("\\(",x.fit2))>=1){
@@ -67,12 +74,12 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=200,signif=0.05,seed=1
 
     if(nrows1!=nrows2){message("Note: some cases with missing value were removed.")}
 
-    fit1.c=coxph(formula(as.character(fit1$call)[2]),data=data)
-    fit2.c=coxph(formula(as.character(fit2$call)[2]),data=data)
+    fit1.c=coxph(formula(fit1.formula),data=data)
+    fit2.c=coxph(formula(fit2.formula),data=data)
 
-    w1=rcorrcens(formula(paste("Surv(data$",surv.t,",","data$",surv.s,") ~",
+    w1=rcorrcens(formula(paste("Surv(data$",surv.t1,",","data$",surv.s1,") ~",
                                "predict(fit1.c)")))
-    w2=rcorrcens(formula(paste("Surv(data$",surv.t,",","data$",surv.s,") ~",
+    w2=rcorrcens(formula(paste("Surv(data$",surv.t2,",","data$",surv.s2,") ~",
                                "predict(fit2.c)")))
     c1=w1[3]/2+0.5
     se1=w1[4]/2;low1=c1-1.96*se1;up1=c1+1.96*se1
@@ -87,11 +94,11 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=200,signif=0.05,seed=1
     if(as.character(fit1$call)[1]=="coxph" & as.character(fit2$call)[1]=="coxph"){
       change.boot=function(data,indices){
         data.boot=data[indices,]
-        fit1.boot=coxph(formula(as.character(fit1$call)[2]),data=data.boot)
-        fit2.boot=coxph(formula(as.character(fit2$call)[2]),data=data.boot)
-        w1=rcorrcens(formula(paste("Surv(data.boot$",surv.t,",","data.boot$",surv.s,") ~",
+        fit1.boot=coxph(formula(fit1.formula),data=data.boot)
+        fit2.boot=coxph(formula(fit2.formula),data=data.boot)
+        w1=rcorrcens(formula(paste("Surv(data.boot$",surv.t1,",","data.boot$",surv.s1,") ~",
                                    "predict(fit1.boot)")))
-        w2=rcorrcens(formula(paste("Surv(data.boot$",surv.t,",","data.boot$",surv.s,") ~",
+        w2=rcorrcens(formula(paste("Surv(data.boot$",surv.t2,",","data.boot$",surv.s2,") ~",
                                    "predict(fit2.boot)")))
         c1=w1[3]/2+0.5
         c2=w2[3]/2+0.5
@@ -102,8 +109,8 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=200,signif=0.05,seed=1
     if(as.character(fit1$call)[1]=="cph" & as.character(fit2$call)[1]=="cph"){
       change.boot=function(data,indices){
         data.boot=data[indices,]
-        fit1.boot=cph(formula(as.character(fit1$call)[2]),data=data.boot)
-        fit2.boot=cph(formula(as.character(fit2$call)[2]),data=data.boot)
+        fit1.boot=cph(formula(fit1.formula),data=data.boot)
+        fit2.boot=cph(formula(fit2.formula),data=data.boot)
         c1=fit1.boot$stats["Dxy"]/2+0.5
         c2=fit2.boot$stats["Dxy"]/2+0.5
         as.numeric(c2-c1)
