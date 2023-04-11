@@ -45,10 +45,15 @@ Version 0.1.4: a) Fix the error with the arguments of 'time=' and 'event=' in th
 
 Version 0.1.5: a) Apply 'boot.ci' function to compute the confidence interFix the error with the arguments of 'time=' and 'event=' in the coxph model. b) 'lrm' model was supported. c) Different dependent variables could be set.
 
+Version 0.1.6: Fix minor bugs.
+
+Version 0.1.7: Fix the error from the update that 'survival' is no longer attached by rms.
+
 more functions will be included in 'CsChange' package!
 }
 \examples{
 require("rms")
+require("survival")
 set.seed(123)
 n=50
 age=50+12*rnorm(n)

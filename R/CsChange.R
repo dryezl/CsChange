@@ -2,12 +2,13 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=200,signif=0.05,seed=1
 
   set.seed(seed)
 
-  if.stop=c(as.character(fit1$call)[1],as.character(fit2$call)[1]) %in% c("lrm","coxph","cph")
+  if.stop=c(as.character(fit1$call)[1],as.character(fit2$call)[1]) %in% c("glm","lrm","coxph","cph")
   if(any(!if.stop)){
     stop(cat(paste("The models supported currently are:",
                    "'coxph' model in 'survival' package",
                    "'cph' model in 'rms' package",
-                   "'lrm' model in 'rms' package",sep="\n")))
+                   "'lrm' model in 'rms' package",
+                   "'glm' model in 'stats' package",sep="\n")))
   }
 
   #############################
@@ -131,9 +132,9 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=200,signif=0.05,seed=1
 
   }#coxph or cph
 
-  ###################
-  ## for lrm model ##
-  ###################
+  #######################
+  ## for  or lrm model ##
+  #######################
 
   if(as.character(fit1$call)[1]=="lrm"){
 
@@ -146,6 +147,7 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=200,signif=0.05,seed=1
       y1=as.character(form1)[2]
       y2=as.character(form2)[2]
       y=c(y1,y2)
+      y=y[!duplicated(y)]
 
       x.fit1=as.character(form1)[3]
       x.fit1=strsplit(x.fit1,"\\+")[[1]]
@@ -178,8 +180,8 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=200,signif=0.05,seed=1
     fit1.c=lrm(form1,data=data)
     fit2.c=lrm(form2,data=data)
 
-    w1=rcorrcens(formula(paste("data$",y,"~","predict(fit1.c)",sep="")))
-    w2=rcorrcens(formula(paste("data$",y,"~","predict(fit2.c)",sep="")))
+    w1=rcorrcens(formula(paste("data$",y1,"~","predict(fit1.c)",sep="")))
+    w2=rcorrcens(formula(paste("data$",y2,"~","predict(fit2.c)",sep="")))
     c1=w1[3]/2+0.5
     se1=w1[4]/2;low1=c1-1.96*se1;up1=c1+1.96*se1
     c2=w2[3]/2+0.5
@@ -194,8 +196,102 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=200,signif=0.05,seed=1
       data.boot=data[indices,]
       fit1.boot=lrm(form1,data=data.boot)
       fit2.boot=lrm(form2,data=data.boot)
-      w1=rcorrcens(formula(paste("data$",y,"~","predict(fit1.c)",sep="")))
-      w2=rcorrcens(formula(paste("data$",y,"~","predict(fit2.c)",sep="")))
+      w1=rcorrcens(formula(paste("data.boot$",y1,"~","predict(fit1.boot)")))
+      w2=rcorrcens(formula(paste("data.boot$",y2,"~","predict(fit2.boot)")))
+      c1=w1[3]/2+0.5
+      c2=w2[3]/2+0.5
+      as.numeric(c2-c1)
+    }
+
+    tryb=try(boot(data, change.boot, R=nb),TRUE)
+    if(inherits(tryb,"try-error")){
+      message("There is problem in the 'boot' function! Try the glm model again!")
+      rst=NULL
+    }else{
+      rstb=boot(data, change.boot, R=nb)
+      if(rstb$t0==0){message("These two models are equal!");rst=NULL}
+      if(rstb$t0!=0){
+        ci=boot.ci(rstb,type="norm")
+        low=ci$normal[2]
+        up=ci$normal[3]
+        rst=data.frame(change=rstb$t0,low=low,up=up)
+        z=rst$change/((rst$up-rst$low)/(2*qnorm(1-signif*0.5)))
+        p=2*pnorm(abs(z),lower.tail=F)
+        rst$p=p
+        row.names(rst)="fit2-fit1"
+      }
+    }
+
+    return(list(rst,c12))
+
+  }#lrm
+
+  #############################
+  ## for glm(binomial) model ##
+  #############################
+
+  if(as.character(fit1$call)[1]=="glm" & as.character(fit1$family)[1]=="binomial"){
+
+    if(is.null(form1)){
+      form1=as.character(fit1$call)[2]
+      form2=as.character(fit2$call)[2]
+    }
+
+    if(!is.null(form1)){
+      y1=as.character(form1)[2]
+      y2=as.character(form2)[2]
+      y=c(y1,y2)
+      y=y[!duplicated(y)]
+
+      x.fit1=as.character(form1)[3]
+      x.fit1=strsplit(x.fit1,"\\+")[[1]]
+      x.fit1=gsub(" ","",x.fit1)
+      if(length(grep("\\(",x.fit1))>=1){
+        x.fit1[grep("\\(",x.fit1)]=sapply(strsplit(x.fit1[grep("\\(",x.fit1)],"\\("),"[",2)
+        x.fit1[grep("\\)",x.fit1)]=gsub("\\)","",x.fit1[grep("\\)",x.fit1)])
+      }
+
+      x.fit2=as.character(form2)[3]
+      x.fit2=strsplit(x.fit2,"\\+")[[1]]
+      x.fit2=gsub(" ","",x.fit2)
+      if(length(grep("\\(",x.fit2))>=1){
+        x.fit2[grep("\\(",x.fit2)]=sapply(strsplit(x.fit2[grep("\\(",x.fit2)],"\\("),"[",2)
+        x.fit2[grep("\\)",x.fit2)]=gsub("\\)","",x.fit2[grep("\\)",x.fit2)])
+      }
+
+      x.fit=c(x.fit1,x.fit2)
+      x.fit=x.fit[!duplicated(x.fit)]
+      all=c(y,x.fit)
+    }
+
+    data=data[,all]
+    nrows1=nrow(data)
+    data=na.omit(data)
+    nrows2=nrow(data)
+
+    if(nrows1!=nrows2){message("Note: some cases with missing value were removed.")}
+
+    fit1.c=glm(form1,data=data,family = "binomial")
+    fit2.c=glm(form2,data=data,family = "binomial")
+
+    w1=rcorrcens(formula(paste("data$",y1,"~","predict(fit1.c)",sep="")))
+    w2=rcorrcens(formula(paste("data$",y2,"~","predict(fit2.c)",sep="")))
+    c1=w1[3]/2+0.5
+    se1=w1[4]/2;low1=c1-1.96*se1;up1=c1+1.96*se1
+    c2=w2[3]/2+0.5
+    se2=w2[4]/2;low2=c2-1.96*se2;up2=c2+1.96*se2
+    c12=data.frame(c=c(c1,c2),low=c(low1,low2),up=c(up1,up2))
+    z=(c12$c-0.5)/((c12$up-c12$low)/(2*qnorm(1-signif*0.5)))
+    p=2*pnorm(abs(z),lower.tail=F)
+    c12$p=p
+    row.names(c12)=c("fit1","fit2")
+
+    change.boot=function(data,indices){
+      data.boot=data[indices,]
+      fit1.boot=glm(form1,data=data.boot,family = "binomial")
+      fit2.boot=glm(form2,data=data.boot,family = "binomial")
+      w1=rcorrcens(formula(paste("data.boot$",y1,"~","predict(fit1.boot)")))
+      w2=rcorrcens(formula(paste("data.boot$",y2,"~","predict(fit2.boot)")))
       c1=w1[3]/2+0.5
       c2=w2[3]/2+0.5
       as.numeric(c2-c1)
@@ -222,6 +318,6 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=200,signif=0.05,seed=1
 
     return(list(rst,c12))
 
-  }#lrm
+  }#glm
 
 }
