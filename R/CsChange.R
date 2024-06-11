@@ -50,14 +50,14 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=200,signif=0.05,seed=1
     surv.s=surv.s[!duplicated(surv.s)]
 
     x.fit1=as.character(fit1.formula)[3]
-    x.fit1=gsub(" ","",x.fit1)
+    x.fit1=gsub(" |\\n","",x.fit1)
     x.fit1=strsplit(x.fit1,"\\+")[[1]]
     if(length(grep("\\(",x.fit1))>=1){
       x.fit1[grep("\\(",x.fit1)]=sapply(strsplit(x.fit1[grep("\\(",x.fit1)],"\\("),"[",2)
       x.fit1[grep("\\)",x.fit1)]=gsub("\\)","",x.fit1[grep("\\)",x.fit1)])
     }
     x.fit2=as.character(fit2.formula)[3]
-    x.fit2=gsub(" ","",x.fit2)
+    x.fit2=gsub(" |\\n","",x.fit2)
     x.fit2=strsplit(x.fit2,"\\+")[[1]]
     if(length(grep("\\(",x.fit2))>=1){
       x.fit2[grep("\\(",x.fit2)]=sapply(strsplit(x.fit2[grep("\\(",x.fit2)],"\\("),"[",2)
@@ -151,7 +151,7 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=200,signif=0.05,seed=1
 
       x.fit1=as.character(form1)[3]
       x.fit1=strsplit(x.fit1,"\\+")[[1]]
-      x.fit1=gsub(" ","",x.fit1)
+      x.fit1=gsub(" |\\n","",x.fit1)
       if(length(grep("\\(",x.fit1))>=1){
         x.fit1[grep("\\(",x.fit1)]=sapply(strsplit(x.fit1[grep("\\(",x.fit1)],"\\("),"[",2)
         x.fit1[grep("\\)",x.fit1)]=gsub("\\)","",x.fit1[grep("\\)",x.fit1)])
@@ -159,7 +159,7 @@ CsChange=function(fit1,fit2,form1=NULL,form2=NULL,data,nb=200,signif=0.05,seed=1
 
       x.fit2=as.character(form2)[3]
       x.fit2=strsplit(x.fit2,"\\+")[[1]]
-      x.fit2=gsub(" ","",x.fit2)
+      x.fit2=gsub(" |\\n","",x.fit2)
       if(length(grep("\\(",x.fit2))>=1){
         x.fit2[grep("\\(",x.fit2)]=sapply(strsplit(x.fit2[grep("\\(",x.fit2)],"\\("),"[",2)
         x.fit2[grep("\\)",x.fit2)]=gsub("\\)","",x.fit2[grep("\\)",x.fit2)])
